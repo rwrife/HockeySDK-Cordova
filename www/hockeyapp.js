@@ -25,6 +25,9 @@ start: function(success, failure, appId, autoSend, checkForUpdateMode, ignoreDef
     setUserName: function (success, failure, userName) {
       exec(success, failure, "HockeyApp", "setUserName", [userName]);
     },
+    setFeedbackURL: function(success, failure, feedbackUrl) {
+      exec(success, failure, "HockeyApp", "setFeedbackURL", [feedbackUrl]);
+    },
     feedback: function (success, failure) {
         exec(success, failure, "HockeyApp", "feedback", []);
     },
@@ -47,7 +50,7 @@ start: function(success, failure, appId, autoSend, checkForUpdateMode, ignoreDef
     trackEvent: function (success, failure, eventName) {
         exec(success, failure, "HockeyApp", "trackEvent", [eventName]);
     },
-    
+
     // Valid loginMode values
     loginMode: {
         ANONYMOUS: 0,

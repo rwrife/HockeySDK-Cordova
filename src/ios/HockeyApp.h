@@ -9,11 +9,13 @@
     NSString *userEmail;
     NSString *userName;
     NSMutableDictionary *crashMetaData;
+    NSString *feedbackURL;
 }
 
 - (void)start:(CDVInvokedUrlCommand*)command;
 - (void)setUserEmail:(CDVInvokedUrlCommand*)command;
 - (void)setUserName:(CDVInvokedUrlCommand*)command;
+- (void)setFeedbackURL:(CDVInvokedUrlCommand*)command;
 - (void)feedback:(CDVInvokedUrlCommand*)command;
 - (void)composeFeedback:(CDVInvokedUrlCommand*)command;
 - (void)checkForUpdate:(CDVInvokedUrlCommand*)command;

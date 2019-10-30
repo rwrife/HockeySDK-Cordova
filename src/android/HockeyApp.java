@@ -46,17 +46,17 @@ public class HockeyApp extends CordovaPlugin {
     public static final String XWALK_SCREENSHOT_CAPTURE_MSG = "captureXWalkBitmap";
     public static final String XWALK_SCREENSHOT_BITMAP_MSG = "onGotXWalkBitmap";
     private static final int CHECK_UPDATE_ON_STARTUP = 0;
-    
+
     public static boolean initialized = false;
     public static String appId;
     public static Object monitor = new Object();
     public static volatile Bitmap bitmap;
-    
+
     private ConfiguredCrashManagerListener crashListener;
-    
+
     // Integration with Crosswalk requires:
     // - Crosswalk engine version 18 or later
-    // - Latest cordova-plugin-crosswalk-webview plugin     
+    // - Latest cordova-plugin-crosswalk-webview plugin
     private Bitmap getBitmap() {
         bitmap = null;
         boolean isCrosswalk = false;
@@ -91,12 +91,12 @@ public class HockeyApp extends CordovaPlugin {
         if (id.equals(XWALK_SCREENSHOT_BITMAP_MSG) && data != null) {
             bitmap = (Bitmap)data;
             synchronized (monitor) {
-                monitor.notify();                
+                monitor.notify();
             }
         }
         return null;
     }
-    
+
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         if (action.equals("start")) {
@@ -106,7 +106,7 @@ public class HockeyApp extends CordovaPlugin {
             boolean shouldCreateNewFeedbackThread = args.optBoolean(5, false);
             FeedbackManager.register(cordova.getActivity(), appId, shouldCreateNewFeedbackThread ? new SingleThreadFeedbackManagerListener() : null);
             this.crashListener = new ConfiguredCrashManagerListener(autoSend, ignoreDefaultHandler);
-            
+
             final int checkForUpdateMode = args.optInt(6, CHECK_UPDATE_ON_STARTUP);
             if (checkForUpdateMode == CHECK_UPDATE_ON_STARTUP) {
                 UpdateManager.register(cordova.getActivity(), appId);
@@ -114,12 +114,12 @@ public class HockeyApp extends CordovaPlugin {
 
             MetricsManager.register(cordova.getActivity().getApplication(), appId);
             CrashManager.register(cordova.getActivity(), appId, this.crashListener);
-            
+
             // Verify the user
             final CallbackContext loginCallbackContext = callbackContext;
             final int loginMode = args.optInt(1, LoginManager.LOGIN_MODE_ANONYMOUS);
             final String appSecret = args.optString(2, "");
-            
+
             if (loginMode == LoginManager.LOGIN_MODE_ANONYMOUS) {
                 // LOGIN_MODE_ANONYMOUS does not raise the onSuccess method
                 // of the LoginManagerListener, so just return immediately.
@@ -140,7 +140,7 @@ public class HockeyApp extends CordovaPlugin {
                         public void onBack() {
                             loginCallbackContext.error("Login failed");
                         }
-                        
+
                         @Override
                         public void onSuccess() {
                             initialized = true;
@@ -157,13 +157,13 @@ public class HockeyApp extends CordovaPlugin {
             callbackContext.sendPluginResult(pluginResult);
             return true;
         }
-        
+
         // All other operations require that start() have been called, so check that now
         if (!initialized) {
             callbackContext.error("cordova hockeyapp plugin not initialized, call start() first");
             return false;
-        } 
-        
+        }
+
         if (action.equals("checkForUpdate")) {
             UpdateManager.register(cordova.getActivity(), appId);
             callbackContext.success();
@@ -184,6 +184,13 @@ public class HockeyApp extends CordovaPlugin {
             return true;
         }
 
+        if (action.equals("setFeedbackURL")) {
+            String feedbackUrl = args.optString(0);
+            FeedbackManager.setFeedbackURL(feedbackUrl);
+            callbackContext.success();
+            return true;
+        }
+
         if (action.equals("feedback")) {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -195,7 +202,7 @@ public class HockeyApp extends CordovaPlugin {
             callbackContext.success();
             return true;
         }
-        
+
         if (action.equals("composeFeedback")) {
             final ArrayList<Uri> attachments = new ArrayList<Uri>();
             final Activity context = cordova.getActivity();
@@ -244,7 +251,7 @@ public class HockeyApp extends CordovaPlugin {
             callbackContext.success();
             return true;
         }
-        
+
         if (action.equals("forceCrash")) {
             new Thread(new Runnable() {
                 public void run() {
@@ -255,38 +262,38 @@ public class HockeyApp extends CordovaPlugin {
             }).start();
             return true;
         }
-        
+
         if (action.equals("addMetaData")) {
             try {
                 String jsonArgs = args.optString(0);
                 JSONObject rawMetaData = new JSONObject(jsonArgs);
                 Iterator<String> keys = rawMetaData.keys();
                 boolean success = true;
-            
+
                 while (keys.hasNext()) {
                     String key = keys.next();
                     success = success && this.crashListener.putMetaData(key, rawMetaData.getString(key));
                 }
-                
+
                 if (success) {
                     callbackContext.success();
                 } else {
                     callbackContext.error("failed to parse metadata. Ignoring....");
                 }
-                
+
                 return success;
             } catch (JSONException e) {
                 callbackContext.error("failed to parse metadata. Ignoring....");
                 return false;
             }
         }
-        
+
         if (action.equals("trackEvent")) {
             String eventName = args.optString(0);
             if (eventName.isEmpty()) {
                 callbackContext.error("no event name provided. Ignoring....");
                 return false;
-            } else { 
+            } else {
                 MetricsManager.trackEvent(eventName);
                 callbackContext.success();
                 return true;
@@ -296,15 +303,15 @@ public class HockeyApp extends CordovaPlugin {
         // Unrecognized command
         return false;
     }
-    
+
     @Override
     public void onPause(boolean multitasking) {
-        Tracking.stopUsage(cordova.getActivity());            
+        Tracking.stopUsage(cordova.getActivity());
     }
-    
+
     @Override
     public void onResume(boolean multitasking) {
-        Tracking.startUsage(cordova.getActivity());            
+        Tracking.startUsage(cordova.getActivity());
     }
 }
 
@@ -318,34 +325,39 @@ class SingleThreadFeedbackManagerListener extends FeedbackManagerListener {
     public boolean shouldCreateNewFeedbackThread(){
         return true;
     }
+
+    @Override
+    public void overrideFeedbackManagerSettings(FeedbackManager feedbackManager) {
+        //do custom stuff here
+    }
 }
 
 class ConfiguredCrashManagerListener extends CrashManagerListener {
     private boolean autoSend = false;
     private boolean ignoreDefaultHandler = false;
     private JSONObject crashMetaData;
-    
+
     public ConfiguredCrashManagerListener(boolean autoSend, boolean ignoreDefaultHandler) {
         this.autoSend = autoSend;
         this.ignoreDefaultHandler = ignoreDefaultHandler;
         this.crashMetaData = new JSONObject();
     }
-    
+
     @Override
     public boolean shouldAutoUploadCrashes() {
         return this.autoSend;
     }
-    
+
     @Override
     public boolean ignoreDefaultHandler() {
         return this.ignoreDefaultHandler;
     }
-    
+
     @Override
     public String getDescription() {
         return crashMetaData.toString();
     }
-    
+
     public boolean putMetaData(String key, String value) {
         try {
             this.crashMetaData.put(key, value);

@@ -10,6 +10,7 @@
     initialized = NO;
     userEmail = nil;
     userName = nil;
+    feedbackURL = nil;
     crashMetaData = [NSMutableDictionary new];
     shouldCreateNewFeedbackThread = NO;
     return self;
@@ -82,6 +83,13 @@
 - (void)setUserName:(CDVInvokedUrlCommand*)command {
     NSString* nameArgumentValue = [command argumentAtIndex:0];
     userName = nameArgumentValue;
+
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+}
+
+- (void)setFeedbackURL:(CDVInvokedUrlCommand*)command {
+    NSString* urlArgumentValue = [command argumentAtIndex:0];
+    feedbackURL = urlArgumentValue;
 
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
@@ -227,6 +235,12 @@
 
 - (BOOL)forceNewFeedbackThreadForFeedbackManager:(BITFeedbackManager *)feedbackManager {
     return shouldCreateNewFeedbackThread;
+}
+
+- (void)overrideFeedbackManagerSettings:(BITFeedbackManager *)feedbackManager {
+    if(feedbackURL != nil) {
+        [feedbackManager setServerURL:feedbackURL];
+    }
 }
 
 @end

@@ -92,6 +92,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)forceNewFeedbackThreadForFeedbackManager:(BITFeedbackManager *)feedbackManager;
 
+
+/**
+ *  Sets the feedback URL for redirecting data to a new server.
+ */
+- (void)overrideFeedbackManagerSettings:(BITFeedbackManager *)feedbackManager;
+
 @end
 
 NS_ASSUME_NONNULL_END
